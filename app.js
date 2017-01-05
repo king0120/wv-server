@@ -19,6 +19,13 @@ db.on('open', () => {
 
 
 app.get('/', function (req, res) {
+    User.find({}, (err, users) => {
+      if (err) throw err;
+      res.json(users);
+    });
+})
+
+app.post('/', function (req, res) {
   var bob = new User({
     name: 'Booob',
     username: 'ffd',
@@ -30,15 +37,8 @@ app.get('/', function (req, res) {
       console.log(err)
       throw err
     };
-
-    console.log('user saved successfully');
-    User.find({}, (err, users) => {
-      if (err) throw err;
-      res.json(users);
-    });
+    res.send("Success!")
   })
-
-
 })
 
 app.listen(3000, function () {
