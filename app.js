@@ -1,46 +1,46 @@
-var express = require('express')
-var app = express();
+// server.js
+
+// set up ======================================================================
+// get all the tools we need
+var express  = require('express');
+var app      = express();
+var port     = process.env.PORT || 3000;
 var mongoose = require('mongoose');
-mongoose.connect('mongodb://localhost/weathervain');
-require('./schema')(mongoose);
-const db = mongoose.connection;
+var passport = require('passport');
+var flash    = require('connect-flash');
 
-var User = mongoose.model('User');
-
-db.on('error', (err) => {
-  console.error(`connection error: ${err}`);
-  process.exit(1);
-})
-
-db.on('open', () => {
-  console.log('Connected to MongoDb')
-})
+var morgan       = require('morgan');
+var cookieParser = require('cookie-parser');
+var bodyParser   = require('body-parser');
+var session      = require('express-session');
 
 
+// configuration ===============================================================
+mongoose.connect("mongodb://localhost/weathervain"); // connect to our database
 
-app.get('/', function (req, res) {
-    User.find({}, (err, users) => {
-      if (err) throw err;
-      res.json(users);
-    });
-})
+require('./config/passport')(passport); // pass passport for configuration
 
-app.post('/', function (req, res) {
-  var bob = new User({
-    name: 'Booob',
-    username: 'ffd',
-    password: 'password'
-  });
+// set up our express application
+app.use(morgan('dev')); // log every request to the console
+app.use(cookieParser()); // read cookies (needed for auth)
+app.use(bodyParser.json()); // get information from html forms
+app.use(bodyParser.urlencoded({ extended: true }));
 
-  bob.save((err) => {
-    if (err) {
-      console.log(err)
-      throw err
-    };
-    res.send("Success!")
-  })
-})
+app.set('view engine', 'ejs'); // set up ejs for templating
 
-app.listen(3000, function () {
-  console.log('Example app listening on port 3000!')
-})
+// required for passport
+app.use(session({
+    secret: 'ilovescotchscotchyscotchscotch', // session secret
+    resave: true,
+    saveUninitialized: true
+}));
+app.use(passport.initialize());
+app.use(passport.session()); // persistent login sessions
+app.use(flash()); // use connect-flash for flash messages stored in session
+
+// routes ======================================================================
+require('./app/routes.js')(app, passport); // load our routes and pass in our app and fully configured passport
+
+// launch ======================================================================
+app.listen(port);
+console.log('The magic happens on port ' + port);
